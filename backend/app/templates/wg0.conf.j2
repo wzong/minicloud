@@ -1,0 +1,16 @@
+[Interface]
+PrivateKey = {{ private_key }}
+Address = {{ address }}
+ListenPort = {{ listen_port }}
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+
+{% for peer in peers %}
+# {{ peer.comment or peer.datacenter_code }}
+[Peer]
+PublicKey = {{ peer.public_key }}
+Endpoint = {{ peer.endpoint }}
+AllowedIPs = {{ peer.allowed_ips }}
+PersistentKeepalive = 25
+
+{% endfor %}

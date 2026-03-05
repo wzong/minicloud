@@ -1,0 +1,19 @@
+version: 2
+ethernets:
+  ens3:
+    dhcp4: false
+    addresses:
+      - {{ ip_address }}/{{ prefix_length }}
+    gateway4: {{ gateway }}
+    nameservers:
+      addresses:
+{% for dns in dns_servers %}
+        - {{ dns }}
+{% endfor %}
+{% if routes %}
+    routes:
+{% for route in routes %}
+      - to: {{ route.to }}
+        via: {{ route.via }}
+{% endfor %}
+{% endif %}
