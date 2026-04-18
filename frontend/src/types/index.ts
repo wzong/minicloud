@@ -153,6 +153,14 @@ export interface IPAvailable {
   total_range: number;
 }
 
+export interface IPConfig {
+  range_start: string;
+  range_end: string;
+  subnet_mask: string;
+  gateway: string;
+  dns: string[];
+}
+
 export interface WGStatus {
   interface: string;
   public_key: string;

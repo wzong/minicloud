@@ -138,7 +138,13 @@ multipass info <name>          # Status check
 ### Prerequisites on Host
 - Hyper-V enabled (Windows Pro/Server)
 - OpenSSH server running on Windows host
-- External virtual switch configured
+- External virtual switch configured (run once in an elevated PowerShell):
+
+```powershell
+New-VMSwitch -Name "External" -NetAdapterName "Ethernet" -AllowManagementOS $true
+```
+
+> Note: `-AllowManagementOS` requires a PowerShell boolean (`$true`), not a string (`"true"`).
 
 ### VM Creation Flow
 
