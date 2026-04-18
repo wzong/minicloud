@@ -424,6 +424,7 @@ class HostService:
             configured=False,
             bridge_name=host.bridge_interface,
             setup_commands=[
-                'powershell -Command "New-VMSwitch -Name \'br0\' -NetAdapterName \'Ethernet\' -AllowManagementOS $true"',
+                "# Run in an elevated PowerShell session:",
+                "New-VMSwitch -Name 'br0' -NetAdapterName 'Ethernet' -AllowManagementOS $true",
             ],
         )
