@@ -112,8 +112,10 @@ const HostsPage: React.FC = () => {
       title: 'Hypervisor',
       dataIndex: 'hypervisor_installed',
       key: 'hypervisor',
-      render: (installed: boolean, record: Host) =>
-        installed ? (
+      render: (installed: boolean | null, record: Host) =>
+        installed === null ? (
+          <Tag>unknown</Tag>
+        ) : installed ? (
           <Tag color="green">{record.hypervisor_type}</Tag>
         ) : (
           <Tag color="orange">Not installed</Tag>
@@ -123,8 +125,10 @@ const HostsPage: React.FC = () => {
       title: 'Bridge',
       dataIndex: 'bridge_configured',
       key: 'bridge',
-      render: (configured: boolean) =>
-        configured ? (
+      render: (configured: boolean | null) =>
+        configured === null ? (
+          <Tag>unknown</Tag>
+        ) : configured ? (
           <Tag color="green">Configured</Tag>
         ) : (
           <Tag color="orange">Not configured</Tag>
@@ -171,14 +175,18 @@ const HostsPage: React.FC = () => {
               <Descriptions.Item label="RAM">{formatRam(host.ram_mb)}</Descriptions.Item>
               <Descriptions.Item label="Disk">{formatDisk(host.disk_gb)}</Descriptions.Item>
               <Descriptions.Item label="Hypervisor">
-                {host.hypervisor_installed ? (
+                {host.hypervisor_installed === null ? (
+                  <Tag>unknown</Tag>
+                ) : host.hypervisor_installed ? (
                   <Tag color="green">{host.hypervisor_type}</Tag>
                 ) : (
                   <Tag color="orange">Not installed</Tag>
                 )}
               </Descriptions.Item>
               <Descriptions.Item label="Bridge">
-                {host.bridge_configured ? (
+                {host.bridge_configured === null ? (
+                  <Tag>unknown</Tag>
+                ) : host.bridge_configured ? (
                   <Tag color="green">Configured</Tag>
                 ) : (
                   <Tag color="orange">Not configured</Tag>

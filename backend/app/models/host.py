@@ -37,9 +37,9 @@ class Host(Base):
     subnet_mask: Mapped[str | None] = mapped_column(String(45), nullable=True)
     dns_servers: Mapped[str | None] = mapped_column(String(256), nullable=True)
     bridge_interface: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    hypervisor_installed: Mapped[bool] = mapped_column(Boolean, default=False)
+    hypervisor_installed: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     hypervisor_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    bridge_configured: Mapped[bool] = mapped_column(Boolean, default=False)
+    bridge_configured: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

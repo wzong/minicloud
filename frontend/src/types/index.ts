@@ -13,9 +13,9 @@ export interface Host {
   subnet_mask: string | null;
   dns_servers: string | null;
   bridge_interface: string | null;
-  hypervisor_installed: boolean;
+  hypervisor_installed: boolean | null;
   hypervisor_type: string | null;
-  bridge_configured: boolean;
+  bridge_configured: boolean | null;
   created_at: string;
   updated_at: string;
 }

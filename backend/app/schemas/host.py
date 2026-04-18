@@ -37,9 +37,9 @@ class HostResponse(BaseModel):
     subnet_mask: Optional[str] = None
     dns_servers: Optional[str] = None
     bridge_interface: Optional[str] = None
-    hypervisor_installed: bool
+    hypervisor_installed: Optional[bool] = None
     hypervisor_type: Optional[str] = None
-    bridge_configured: bool
+    bridge_configured: Optional[bool] = None
     created_at: datetime
     updated_at: datetime
 
