@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, Table, Button, Tag, Space, Modal, Form, Input, message, Popconfirm, Card, Row, Col, Statistic } from 'antd';
+import { Typography, Table, Button, Tag, Space, Modal, Form, Input, message, Popconfirm, Card, Row, Col, Statistic, theme } from 'antd';
 import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ipApi } from '../api/ip';
@@ -8,6 +8,7 @@ const IPManagementPage: React.FC = () => {
   const [reserveOpen, setReserveOpen] = useState(false);
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const { token } = theme.useToken();
 
   const { data: allocations = [], isLoading } = useQuery({
     queryKey: ['ip-allocations'],
@@ -76,10 +77,10 @@ const IPManagementPage: React.FC = () => {
       {available && (
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={8}>
-            <Card><Statistic title="Available" value={available.total_available} valueStyle={{ color: '#3f8600' }} /></Card>
+            <Card><Statistic title="Available" value={available.total_available} valueStyle={{ color: token.colorSuccess }} /></Card>
           </Col>
           <Col span={8}>
-            <Card><Statistic title="Used" value={available.total_range - available.total_available} valueStyle={{ color: '#1677ff' }} /></Card>
+            <Card><Statistic title="Used" value={available.total_range - available.total_available} valueStyle={{ color: token.colorPrimary }} /></Card>
           </Col>
           <Col span={8}>
             <Card><Statistic title="Total Range" value={available.total_range} /></Card>
