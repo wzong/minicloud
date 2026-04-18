@@ -20,40 +20,41 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       <Typography.Title level={2}>Dashboard</Typography.Title>
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic title="Hosts" value={hosts.length} prefix={<CloudServerOutlined />}
               suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>({onlineHosts} online)</Typography.Text>} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic title="Virtual Machines" value={vms.length} prefix={<DesktopOutlined />}
               suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>({runningVMs} running)</Typography.Text>} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic title="Clusters" value={clusters.length} prefix={<ClusterOutlined />}
               suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>({runningClusters} running)</Typography.Text>} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic title="SSH Keys" value={sshKeys.length} prefix={<KeyOutlined />} />
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
           <Card title="Recent Hosts" size="small">
             <Table
               size="small"
               pagination={false}
               dataSource={hosts.slice(0, 5)}
               rowKey="id"
+              scroll={{ x: 'max-content' }}
               columns={[
                 { title: 'Rack', dataIndex: 'rack_name', render: (n: string) => <Tag>{n.toUpperCase()}</Tag> },
                 { title: 'IP', dataIndex: 'ip_address' },
@@ -62,13 +63,14 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title="Recent VMs" size="small">
             <Table
               size="small"
               pagination={false}
               dataSource={vms.slice(0, 5)}
               rowKey="id"
+              scroll={{ x: 'max-content' }}
               columns={[
                 { title: 'Name', dataIndex: 'name', render: (n: string) => <Typography.Text code>{n}</Typography.Text> },
                 { title: 'IP', dataIndex: 'ip_address' },
