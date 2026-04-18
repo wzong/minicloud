@@ -72,14 +72,18 @@ const HostDetailDrawer: React.FC<Props> = ({ host, onClose }) => {
         <Descriptions.Item label="DNS">{host.dns_servers || '-'}</Descriptions.Item>
         <Descriptions.Item label="Bridge">{host.bridge_interface || '-'}</Descriptions.Item>
         <Descriptions.Item label="Bridge Status">
-          {host.bridge_configured ? (
+          {host.bridge_configured === null ? (
+            <Tag>unknown</Tag>
+          ) : host.bridge_configured ? (
             <Tag color="green">Configured</Tag>
           ) : (
             <Tag color="orange">Not configured</Tag>
           )}
         </Descriptions.Item>
         <Descriptions.Item label="Hypervisor">
-          {host.hypervisor_installed ? (
+          {host.hypervisor_installed === null ? (
+            <Tag>unknown</Tag>
+          ) : host.hypervisor_installed ? (
             <Tag color="green">{host.hypervisor_type}</Tag>
           ) : (
             <Tag color="orange">Not installed</Tag>

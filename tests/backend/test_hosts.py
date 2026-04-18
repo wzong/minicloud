@@ -40,7 +40,8 @@ async def test_create_host(client):
     assert data["ssh_user"] == "root"
     assert data["rack_name"] == "aa"
     assert data["status"] == "pending"
-    assert data["bridge_configured"] is False
+    assert data["bridge_configured"] is None
+    assert data["hypervisor_installed"] is None
 
 
 async def _make_linux_host(client, db_session, *, bridge_interface: str | None):
