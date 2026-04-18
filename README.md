@@ -66,7 +66,7 @@ uvicorn app.main:app --reload --port 8080
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev           # add -- --host to expose on local network
 ```
 
 ### Tests
