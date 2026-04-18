@@ -39,6 +39,7 @@ class HostResponse(BaseModel):
     bridge_interface: Optional[str] = None
     hypervisor_installed: bool
     hypervisor_type: Optional[str] = None
+    bridge_configured: bool
     created_at: datetime
     updated_at: datetime
 
@@ -50,4 +51,10 @@ class HypervisorCheck(BaseModel):
     hypervisor_type: Optional[str] = None
     version: Optional[str] = None
     install_commands: Optional[list[str]] = None
-    bridge_status: Optional[dict] = None
+
+
+class BridgeCheck(BaseModel):
+    configured: bool
+    bridge_name: Optional[str] = None
+    output: Optional[str] = None
+    setup_commands: Optional[list[str]] = None
