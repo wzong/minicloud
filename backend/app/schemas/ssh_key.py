@@ -16,6 +16,7 @@ class SSHKeyResponse(BaseModel):
     id: int
     name: str
     public_key: str
+    private_key_path: str
     fingerprint: str
     created_at: datetime
 

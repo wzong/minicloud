@@ -27,15 +27,55 @@ Minicloud turns a set of physical machines (Linux, macOS, or Windows) into a pri
 ```bash
 # Docker (production)
 cd docker && docker compose up --build
+```
 
-# Backend (dev)
-cd backend && source ../.venv/bin/activate && uvicorn app.main:app --reload --port 8080
+### Backend dev
 
-# Frontend (dev)
-cd frontend && npm run dev
+Create the local Python venv once from the repo root using Python 3.12.
 
-# Tests
-source .venv/bin/activate && python -m pytest tests/backend/ -v
+If `python3.12` is not available on macOS, install it first:
+
+```bash
+brew install python@3.12
+# add Homebrew Python 3.12 to your path if necessary
+export PATH="/opt/homebrew/opt/python@3.12/bin:$PATH"
+```
+
+Then create the venv:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+```
+
+Then run the backend from the `backend` folder, overriding the default Docker-only paths with local data paths:
+
+```bash
+cd backend
+source ../.venv/bin/activate
+mkdir -p ~/data/minicloud/ssh_keys
+export MC_DB_PATH=~/data/minicloud/minicloud.db
+export MC_SSH_KEY_DIR=~/data/minicloud/ssh_keys/
+export MC_WG_PRIVATE_KEY_PATH=~/data/minicloud/wg_private.key
+uvicorn app.main:app --reload --port 8080
+```
+
+### Frontend dev
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Tests
+
+Activate the same venv and run:
+
+```bash
+source .venv/bin/activate
+python -m pytest tests/backend/ -v
 ```
 
 ## Configuration
@@ -47,7 +87,9 @@ All environment variables use the `MC_` prefix:
 | `MC_DATACENTER_CODE` | 2-letter datacenter identifier | `dc` |
 | `MC_IP_RANGE_START` | Start of allocatable IP range | — |
 | `MC_IP_RANGE_END` | End of allocatable IP range | — |
-| `MC_DATABASE_URL` | SQLite database path | `sqlite+aiosqlite:///./minicloud.db` |
+| `MC_DB_PATH` | SQLite database path | `/app/data/minicloud.db` inside Docker; override locally with `~/data/minicloud/minicloud.db` when running from `backend` |
+| `MC_SSH_KEY_DIR` | SSH key directory | `/app/data/ssh_keys` inside Docker; override locally with `~/data/minicloud/ssh_keys` when running from `backend` |
+| `MC_WG_PRIVATE_KEY_PATH` | WireGuard private key path | `/app/data/wg_private.key` inside Docker; override locally with `~/data/minicloud/wg_private.key` when running from `backend` |
 
 ## Documentation
 

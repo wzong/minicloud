@@ -51,7 +51,7 @@ class SSHKeyService:
         fingerprint = self._compute_fingerprint(public_key)
 
         # Save private key to file
-        key_dir = Path(settings.ssh_key_dir)
+        key_dir = Path(settings.ssh_key_dir).expanduser()
         key_dir.mkdir(parents=True, exist_ok=True)
         key_path = key_dir / name
         key_path.write_bytes(private_pem)
@@ -95,7 +95,7 @@ class SSHKeyService:
         fingerprint = self._compute_fingerprint(public_key)
 
         # Save private key
-        key_dir = Path(settings.ssh_key_dir)
+        key_dir = Path(settings.ssh_key_dir).expanduser()
         key_dir.mkdir(parents=True, exist_ok=True)
         key_path = key_dir / name
 
@@ -124,7 +124,7 @@ class SSHKeyService:
             raise HTTPException(status_code=404, detail="SSH key not found")
 
         # Delete key file
-        key_path = Path(key.private_key_path)
+        key_path = Path(key.private_key_path).expanduser()
         if key_path.exists():
             key_path.unlink()
 

@@ -21,6 +21,9 @@ const HostDetailDrawer: React.FC<Props> = ({ host, onClose }) => {
 
   React.useEffect(() => {
     setHypervisorInfo(null);
+    if (host && !host.hypervisor_installed) {
+      checkHypervisor.mutate(host.id);
+    }
   }, [host?.id]);
 
   if (!host) return null;
@@ -77,9 +80,14 @@ const HostDetailDrawer: React.FC<Props> = ({ host, onClose }) => {
           description={
             <div>
               <Typography.Text>Run these commands to install:</Typography.Text>
-              <pre style={{ marginTop: 8, fontSize: 12 }}>
-                {hypervisorInfo.install_commands.join('\n')}
-              </pre>
+              <Typography.Paragraph
+                copyable={{ text: hypervisorInfo.install_commands.join('\n') }}
+                style={{ marginTop: 8 }}
+              >
+                <pre style={{ fontSize: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', margin: 0 }}>
+                  {hypervisorInfo.install_commands.join('\n')}
+                </pre>
+              </Typography.Paragraph>
             </div>
           }
         />

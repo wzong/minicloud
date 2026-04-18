@@ -73,6 +73,7 @@ export interface SSHKey {
   id: number;
   name: string;
   public_key: string;
+  private_key_path: string;
   fingerprint: string;
   created_at: string;
 }

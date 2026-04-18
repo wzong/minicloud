@@ -60,7 +60,7 @@ const AddHostModal: React.FC<Props> = ({ open, onClose }) => {
         <Form.Item name="ssh_key_path" label="SSH Key">
           <Select allowClear placeholder="Select an SSH key">
             {sshKeys.map((k) => (
-              <Select.Option key={k.id} value={`/app/data/ssh_keys/${k.name}`}>
+              <Select.Option key={k.id} value={k.private_key_path}>
                 {k.name} ({k.fingerprint.substring(0, 20)}...)
               </Select.Option>
             ))}
