@@ -97,6 +97,17 @@ const HostsPage: React.FC = () => {
         ),
     },
     {
+      title: 'Bridge',
+      dataIndex: 'bridge_configured',
+      key: 'bridge',
+      render: (configured: boolean) =>
+        configured ? (
+          <Tag color="green">Configured</Tag>
+        ) : (
+          <Tag color="orange">Not configured</Tag>
+        ),
+    },
+    {
       title: 'Actions',
       key: 'actions',
       render: (_: any, record: Host) => (

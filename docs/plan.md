@@ -24,7 +24,7 @@ Phased build plan for Minicloud, ordered by dependency and priority.
 - [x] `services/rack_namer.py` — Sequential `aa`–`zz` rack name assignment
 - [x] `services/host_service.py` — Register host, assign rack name, detect hardware/network via SSH
 - [x] `ssh/client.py` — asyncssh wrapper (run, run_safe, run_multi, upload, download)
-- [x] `api/hosts.py` — CRUD + detect + check-hypervisor endpoints
+- [x] `api/hosts.py` — CRUD + detect + check-hypervisor + check-bridge endpoints
 - [x] Tests: host registration, rack naming, detection mocking
 
 ### 1.4 SSH Key Management
