@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Typography, theme } from 'antd';
+import { Layout, Menu, Typography, theme, Button, Drawer, Grid } from 'antd';
 import {
   DashboardOutlined,
   CloudServerOutlined,
@@ -9,6 +9,7 @@ import {
   KeyOutlined,
   GlobalOutlined,
   ApiOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import Dashboard from './pages/Dashboard';
 import HostsPage from './pages/HostsPage';
@@ -19,6 +20,7 @@ import IPManagementPage from './pages/IPManagementPage';
 import WireGuardPage from './pages/WireGuardPage';
 
 const { Sider, Content, Header } = Layout;
+const { useBreakpoint } = Grid;
 
 const menuItems = [
   { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
@@ -34,23 +36,98 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = theme.useToken();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMobile) setMobileDrawerOpen(false);
+  }, [location.pathname, isMobile]);
+
+  const brand = (
+    <div
+      style={{
+        padding: '16px 24px',
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+      }}
+    >
+      <Typography.Title level={4} style={{ margin: 0 }}>
+        Minicloud
+      </Typography.Title>
+    </div>
+  );
+
+  const navMenu = (
+    <Menu
+      mode="inline"
+      selectedKeys={[location.pathname]}
+      items={menuItems}
+      onClick={({ key }) => navigate(key)}
+      style={{ borderRight: 0 }}
+    />
+  );
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={220} style={{ background: token.colorBgContainer }}>
-        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
-          <Typography.Title level={4} style={{ margin: 0 }}>Minicloud</Typography.Title>
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          style={{ borderRight: 0 }}
-        />
-      </Sider>
+      {!isMobile && (
+        <Sider
+          width={220}
+          collapsedWidth={64}
+          collapsed={desktopCollapsed}
+          trigger={null}
+          style={{ background: token.colorBgContainer }}
+        >
+          {!desktopCollapsed && brand}
+          {navMenu}
+        </Sider>
+      )}
       <Layout>
-        <Content style={{ padding: 24, background: token.colorBgLayout }}>
+        <Header
+          style={{
+            padding: '0 16px',
+            background: token.colorBgContainer,
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            height: 56,
+            lineHeight: '56px',
+          }}
+        >
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            aria-label="Toggle sidebar"
+            onClick={() =>
+              isMobile ? setMobileDrawerOpen(true) : setDesktopCollapsed((v) => !v)
+            }
+          />
+          {isMobile && (
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              Minicloud
+            </Typography.Title>
+          )}
+        </Header>
+        <Drawer
+          placement="left"
+          open={isMobile && mobileDrawerOpen}
+          onClose={() => setMobileDrawerOpen(false)}
+          width={240}
+          styles={{ body: { padding: 0 } }}
+          title={null}
+          closable={false}
+        >
+          {brand}
+          {navMenu}
+        </Drawer>
+        <Content
+          style={{
+            padding: isMobile ? 12 : 24,
+            background: token.colorBgLayout,
+          }}
+        >
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/hosts" element={<HostsPage />} />
