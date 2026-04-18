@@ -4,7 +4,7 @@ from fastapi import HTTPException
 
 from app.models.host import Host, HostStatus, OSType
 from app.models.vm import VM
-from app.schemas.host import HostCreate, HypervisorCheck
+from app.schemas.host import HostCreate, HypervisorCheck, BridgeCheck
 from app.services.rack_namer import get_next_rack_name
 from app.ssh.client import SSHClient
 
@@ -259,19 +259,6 @@ class HostService:
 
     async def _check_linux_hypervisor(self, ssh: SSHClient, host: Host) -> HypervisorCheck:
         success, version = await ssh.run_safe("which virsh && virsh version 2>/dev/null | head -1")
-        bridge_status = {}
-
-        br_success, br_output = await ssh.run_safe("ip link show type bridge")
-        if br_success and br_output:
-            bridge_status["found"] = True
-            bridge_status["output"] = br_output
-        else:
-            bridge_status["found"] = False
-            bridge_status["setup_commands"] = [
-                "sudo nmcli connection add type bridge con-name br0 ifname br0",
-                "sudo nmcli connection add type ethernet slave-type bridge con-name br0-port1 ifname eth0 master br0",
-                "sudo nmcli connection up br0",
-            ]
 
         if success and "virsh" in version:
             host.hypervisor_installed = True
@@ -281,7 +268,6 @@ class HostService:
                 installed=True,
                 hypervisor_type="kvm",
                 version=version,
-                bridge_status=bridge_status,
             )
 
         host.hypervisor_installed = False
@@ -297,7 +283,6 @@ class HostService:
                 "sudo dnf install -y qemu-kvm libvirt virt-install cloud-utils",
                 "sudo systemctl enable --now libvirtd",
             ],
-            bridge_status=bridge_status,
         )
 
     async def _check_macos_hypervisor(self, ssh: SSHClient, host: Host) -> HypervisorCheck:
@@ -342,5 +327,103 @@ class HostService:
             install_commands=[
                 'powershell -Command "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart"',
                 "# Restart required after enabling Hyper-V",
+            ],
+        )
+
+    async def check_bridge(self, host_id: int) -> BridgeCheck:
+        host = await self.db.get(Host, host_id)
+        if not host:
+            raise HTTPException(status_code=404, detail="Host not found")
+
+        ssh = self._get_ssh_client(host)
+        try:
+            async with ssh:
+                if host.os_type == OSType.LINUX:
+                    return await self._check_linux_bridge(ssh, host)
+                elif host.os_type == OSType.MACOS:
+                    return await self._check_macos_bridge(ssh, host)
+                elif host.os_type == OSType.WINDOWS:
+                    return await self._check_windows_bridge(ssh, host)
+                else:
+                    raise HTTPException(status_code=400, detail="OS type not detected. Run detection first.")
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Bridge check failed: {str(e)}")
+
+    async def _check_linux_bridge(self, ssh: SSHClient, host: Host) -> BridgeCheck:
+        bridge_name = host.bridge_interface
+        if bridge_name:
+            success, output = await ssh.run_safe(f"ip link show {bridge_name}")
+            if success and output:
+                host.bridge_configured = True
+                await self.db.commit()
+                return BridgeCheck(configured=True, bridge_name=bridge_name, output=output)
+        else:
+            success, output = await ssh.run_safe("ip -o link show type bridge | awk -F': ' '{print $2}' | head -1")
+            if success and output.strip():
+                detected = output.strip()
+                host.bridge_configured = True
+                await self.db.commit()
+                return BridgeCheck(configured=True, bridge_name=detected, output=detected)
+
+        host.bridge_configured = False
+        await self.db.commit()
+        return BridgeCheck(
+            configured=False,
+            bridge_name=bridge_name,
+            setup_commands=[
+                "sudo nmcli connection add type bridge con-name br0 ifname br0",
+                "sudo nmcli connection add type ethernet slave-type bridge con-name br0-port1 ifname eth0 master br0",
+                "sudo nmcli connection up br0",
+            ],
+        )
+
+    async def _check_macos_bridge(self, ssh: SSHClient, host: Host) -> BridgeCheck:
+        bridge_name = host.bridge_interface or "bridge100"
+        success, output = await ssh.run_safe(f"ifconfig {bridge_name}")
+        if success and output:
+            host.bridge_configured = True
+            await self.db.commit()
+            return BridgeCheck(configured=True, bridge_name=bridge_name, output=output)
+
+        host.bridge_configured = False
+        await self.db.commit()
+        return BridgeCheck(
+            configured=False,
+            bridge_name=bridge_name,
+            setup_commands=[
+                "# Ensure Multipass is installed:",
+                "brew install --cask multipass",
+                "# Configure the bridged interface (replace en0 with the target physical interface):",
+                "multipass set local.bridged-network=en0",
+            ],
+        )
+
+    async def _check_windows_bridge(self, ssh: SSHClient, host: Host) -> BridgeCheck:
+        if host.bridge_interface:
+            command = (
+                f'powershell -Command "(Get-VMSwitch -Name \'{host.bridge_interface}\' '
+                '-ErrorAction SilentlyContinue).Name"'
+            )
+        else:
+            command = (
+                'powershell -Command "(Get-VMSwitch -SwitchType External | '
+                'Select-Object -First 1).Name"'
+            )
+        success, output = await ssh.run_safe(command)
+        detected = output.strip() if output else ""
+        if success and detected:
+            host.bridge_configured = True
+            await self.db.commit()
+            return BridgeCheck(configured=True, bridge_name=detected, output=detected)
+
+        host.bridge_configured = False
+        await self.db.commit()
+        return BridgeCheck(
+            configured=False,
+            bridge_name=host.bridge_interface,
+            setup_commands=[
+                'powershell -Command "New-VMSwitch -Name \'br0\' -NetAdapterName \'Ethernet\' -AllowManagementOS $true"',
             ],
         )

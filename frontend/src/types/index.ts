@@ -15,6 +15,7 @@ export interface Host {
   bridge_interface: string | null;
   hypervisor_installed: boolean;
   hypervisor_type: string | null;
+  bridge_configured: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -32,7 +33,13 @@ export interface HypervisorCheck {
   hypervisor_type: string | null;
   version: string | null;
   install_commands: string[] | null;
-  bridge_status: Record<string, any> | null;
+}
+
+export interface BridgeCheck {
+  configured: boolean;
+  bridge_name: string | null;
+  output: string | null;
+  setup_commands: string[] | null;
 }
 
 export interface VM {

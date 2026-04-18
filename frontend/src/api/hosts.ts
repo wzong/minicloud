@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { Host, HostCreate, HypervisorCheck } from '../types';
+import type { Host, HostCreate, HypervisorCheck, BridgeCheck } from '../types';
 
 export const hostsApi = {
   list: () => apiClient.get<Host[]>('/hosts').then(r => r.data),
@@ -8,5 +8,6 @@ export const hostsApi = {
   delete: (id: number) => apiClient.delete(`/hosts/${id}`),
   detect: (id: number) => apiClient.post<Host>(`/hosts/${id}/detect`).then(r => r.data),
   checkHypervisor: (id: number) => apiClient.post<HypervisorCheck>(`/hosts/${id}/check-hypervisor`).then(r => r.data),
+  checkBridge: (id: number) => apiClient.post<BridgeCheck>(`/hosts/${id}/check-bridge`).then(r => r.data),
   updateRackName: (id: number, rackName: string) => apiClient.put<Host>(`/hosts/${id}/rack-name`, { rack_name: rackName }).then(r => r.data),
 };

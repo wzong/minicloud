@@ -14,6 +14,7 @@ Manage physical machines that serve as hypervisor hosts.
 | `DELETE` | `/hosts/{id}` | Remove a host |
 | `POST` | `/hosts/{id}/detect` | Auto-detect hardware/network info via SSH |
 | `POST` | `/hosts/{id}/check-hypervisor` | Check if hypervisor is installed, detect type |
+| `POST` | `/hosts/{id}/check-bridge` | Check if a bridged network is configured, persist result |
 | `PUT` | `/hosts/{id}/rack-name` | Override the auto-assigned rack name |
 
 ### Host Schema
@@ -35,7 +36,23 @@ Manage physical machines that serve as hypervisor hosts.
   "dns": "8.8.8.8",
   "bridge": "br0",
   "hypervisor_installed": true,
-  "hypervisor_type": "kvm"
+  "hypervisor_type": "kvm",
+  "bridge_configured": true
+}
+```
+
+### BridgeCheck Schema
+
+Returned by `POST /hosts/{id}/check-bridge`. The `configured` flag is also
+persisted on the host (`bridge_configured`). On failure, `setup_commands`
+carries an OS-appropriate remediation snippet for the operator to run.
+
+```json
+{
+  "configured": true,
+  "bridge_name": "br0",
+  "output": "2: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 ...",
+  "setup_commands": null
 }
 ```
 

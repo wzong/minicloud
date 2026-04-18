@@ -70,6 +70,46 @@ The gateway, subnet mask, and DNS are auto-detected from the host during registr
 | macOS | Multipass | Multipass handles bridged networking via `--network` flag |
 | Windows | Hyper-V | Virtual switch in "External" mode bridges to physical NIC |
 
+### Bridge Configuration Check
+
+KVM VM creation passes `--network bridge={host.bridge_interface}` directly to
+`virt-install`. If the named bridge is missing or misnamed on the host, VM
+boot fails with confusing cloud-init / libvirt errors. To surface readiness
+before the operator attempts to provision a VM, the Hosts dashboard exposes a
+**Check Bridge** action per host that mirrors the existing **Check Hypervisor**
+action.
+
+**Persisted state:** `hosts.bridge_configured` (boolean) records the most
+recent check result. The Hosts table and host detail drawer both render it as
+a `Configured` / `Not configured` tag. The drawer auto-runs the check on open
+when the host is not already marked configured.
+
+**API:** `POST /api/hosts/{id}/check-bridge` → `BridgeCheck`:
+
+```json
+{
+  "configured": true,
+  "bridge_name": "br0",
+  "output": "2: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> ...",
+  "setup_commands": null
+}
+```
+
+On failure, `setup_commands` contains an OS-appropriate remediation script
+that the drawer renders in a copyable `Alert`.
+
+**Detection per OS:**
+
+| OS | Command | Success signal | Default when `host.bridge_interface` unset |
+|----|---------|----------------|---------------------------------------------|
+| Linux | `ip link show <bridge>` | Exit code 0 | First bridge reported by `ip -o link show type bridge` |
+| macOS | `ifconfig <bridge>` | Exit code 0 | `bridge100` (auto-created by Multipass) |
+| Windows | `Get-VMSwitch -Name <bridge>` | Non-empty output | First switch from `Get-VMSwitch -SwitchType External` |
+
+The check is independent of **Check Hypervisor** — the two actions target
+different host requirements and each persists its own boolean on the `Host`
+model.
+
 ## IP Address Scheme
 
 ### Within a Datacenter

@@ -39,6 +39,7 @@ class Host(Base):
     bridge_interface: Mapped[str | None] = mapped_column(String(64), nullable=True)
     hypervisor_installed: Mapped[bool] = mapped_column(Boolean, default=False)
     hypervisor_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    bridge_configured: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

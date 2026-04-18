@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import router
 from app.database import get_db
-from app.schemas.host import HostCreate, HostResponse, RackNameUpdate, HypervisorCheck
+from app.schemas.host import HostCreate, HostResponse, RackNameUpdate, HypervisorCheck, BridgeCheck
 
 hosts_router = APIRouter(prefix="/hosts", tags=["hosts"])
 
@@ -52,6 +52,13 @@ async def check_hypervisor(host_id: int, db: AsyncSession = Depends(get_db)):
     from app.services.host_service import HostService
     service = HostService(db)
     return await service.check_hypervisor(host_id)
+
+
+@hosts_router.post("/{host_id}/check-bridge", response_model=BridgeCheck)
+async def check_bridge(host_id: int, db: AsyncSession = Depends(get_db)):
+    from app.services.host_service import HostService
+    service = HostService(db)
+    return await service.check_bridge(host_id)
 
 
 @hosts_router.put("/{host_id}/rack-name", response_model=HostResponse)
