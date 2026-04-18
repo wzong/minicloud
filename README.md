@@ -58,6 +58,10 @@ mkdir -p ~/data/minicloud/ssh_keys
 export MC_DB_PATH=~/data/minicloud/minicloud.db
 export MC_SSH_KEY_DIR=~/data/minicloud/ssh_keys/
 export MC_WG_PRIVATE_KEY_PATH=~/data/minicloud/wg_private.key
+export MC_IP_RANGE_START=10.1.2.1
+export MC_IP_RANGE_END=10.1.2.254
+export MC_IP_GATEWAY=10.1.0.1
+export MC_IP_SUBNET_MASK=255.255.0.0
 uvicorn app.main:app --reload --port 8080
 ```
 
@@ -85,8 +89,10 @@ All environment variables use the `MC_` prefix:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MC_DATACENTER_CODE` | 2-letter datacenter identifier | `dc` |
-| `MC_IP_RANGE_START` | Start of allocatable IP range | — |
-| `MC_IP_RANGE_END` | End of allocatable IP range | — |
+| `MC_IP_RANGE_START` | Start of allocatable IP range | `10.100.0.10` |
+| `MC_IP_RANGE_END` | End of allocatable IP range | `10.100.0.254` |
+| `MC_IP_SUBNET_MASK` | Subnet mask written into VM cloud-init network config | `255.255.255.0` |
+| `MC_IP_GATEWAY` | Gateway written into VM cloud-init network config | `10.100.0.1` |
 | `MC_DB_PATH` | SQLite database path | `/app/data/minicloud.db` inside Docker; override locally with `~/data/minicloud/minicloud.db` when running from `backend` |
 | `MC_SSH_KEY_DIR` | SSH key directory | `/app/data/ssh_keys` inside Docker; override locally with `~/data/minicloud/ssh_keys` when running from `backend` |
 | `MC_WG_PRIVATE_KEY_PATH` | WireGuard private key path | `/app/data/wg_private.key` inside Docker; override locally with `~/data/minicloud/wg_private.key` when running from `backend` |

@@ -2,10 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import router
+from app.config import settings
 from app.database import get_db
-from app.schemas.ip import IPAllocationResponse, IPReserve, IPAvailableResponse
+from app.schemas.ip import IPAllocationResponse, IPReserve, IPAvailableResponse, IPConfigResponse
 
 ip_router = APIRouter(prefix="/ip", tags=["ip"])
+
+
+@ip_router.get("/config", response_model=IPConfigResponse)
+async def get_config():
+    return IPConfigResponse(
+        range_start=settings.ip_range_start,
+        range_end=settings.ip_range_end,
+        subnet_mask=settings.ip_subnet_mask,
+        gateway=settings.ip_gateway,
+        dns=settings.dns_servers,
+    )
 
 
 @ip_router.get("/allocations", response_model=list[IPAllocationResponse])

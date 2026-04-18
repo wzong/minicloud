@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { Typography, Card, Table, Button, Tag, Space, Descriptions, Modal, Form, Input, message, Popconfirm, Tooltip } from 'antd';
+import { Typography, Card, Table, Button, Tag, Space, Descriptions, Modal, Form, Input, message, Popconfirm, Tooltip, Grid, Empty } from 'antd';
 import { PlusOutlined, ReloadOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { wireguardApi } from '../api/wireguard';
 import type { WGPeer } from '../types';
 
+const { useBreakpoint } = Grid;
+
 const WireGuardPage: React.FC = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const { data: status } = useQuery({
     queryKey: ['wg-status'],
@@ -61,10 +65,38 @@ const WireGuardPage: React.FC = () => {
     },
   ];
 
+  const renderPeerCards = (peers: WGPeer[]) => {
+    if (peers.length === 0) return <Empty description="No peers" />;
+    return (
+      <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        {peers.map((peer) => (
+          <Card
+            key={peer.datacenter_code}
+            size="small"
+            title={<Tag>{peer.datacenter_code.toUpperCase()}</Tag>}
+            extra={
+              <Popconfirm title="Remove this peer?" onConfirm={() => removePeerMutation.mutate(peer.datacenter_code)}>
+                <Button size="small" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            }
+          >
+            <Descriptions size="small" column={1} colon={false}>
+              <Descriptions.Item label="Endpoint">{peer.endpoint}</Descriptions.Item>
+              <Descriptions.Item label="Allowed IPs">{peer.allowed_ips}</Descriptions.Item>
+              <Descriptions.Item label="Handshake">{peer.latest_handshake || 'Never'}</Descriptions.Item>
+              <Descriptions.Item label="RX">{peer.transfer_rx || '-'}</Descriptions.Item>
+              <Descriptions.Item label="TX">{peer.transfer_tx || '-'}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        ))}
+      </Space>
+    );
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Typography.Title level={2} style={{ margin: 0 }}>WireGuard</Typography.Title>
+        <Typography.Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>WireGuard</Typography.Title>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => reloadMutation.mutate()} loading={reloadMutation.isPending}>
             Reload
@@ -75,16 +107,16 @@ const WireGuardPage: React.FC = () => {
 
       {status && (
         <Card style={{ marginBottom: 16 }}>
-          <Descriptions bordered size="small" column={2}>
+          <Descriptions bordered size="small" column={isMobile ? 1 : 2}>
             <Descriptions.Item label="Interface">{status.interface}</Descriptions.Item>
             <Descriptions.Item label="Status">
               <Tag color={status.is_up ? 'green' : 'red'}>{status.is_up ? 'UP' : 'DOWN'}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Listen Port">{status.listen_port}</Descriptions.Item>
             <Descriptions.Item label="Address">{status.address}</Descriptions.Item>
-            <Descriptions.Item label="Public Key" span={2}>
-              <Space>
-                <Typography.Text code style={{ fontSize: 12 }}>{status.public_key}</Typography.Text>
+            <Descriptions.Item label="Public Key" span={isMobile ? 1 : 2}>
+              <Space wrap>
+                <Typography.Text code style={{ fontSize: 12, wordBreak: 'break-all' }}>{status.public_key}</Typography.Text>
                 <Tooltip title="Copy">
                   <Button
                     size="small"
@@ -98,8 +130,11 @@ const WireGuardPage: React.FC = () => {
         </Card>
       )}
 
-      <Typography.Title level={4}>Peers</Typography.Title>
-      <Table columns={peerColumns} dataSource={status?.peers || []} rowKey="datacenter_code" pagination={false} />
+      <Typography.Title level={isMobile ? 5 : 4}>Peers</Typography.Title>
+      {isMobile
+        ? renderPeerCards(status?.peers || [])
+        : <Table columns={peerColumns} dataSource={status?.peers || []} rowKey="datacenter_code" pagination={false} scroll={{ x: 'max-content' }} />
+      }
 
       <Modal
         title="Add WireGuard Peer"

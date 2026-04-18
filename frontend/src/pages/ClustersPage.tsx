@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { Typography, Table, Button, Space, Tag, message, Popconfirm, Tooltip, Drawer, Descriptions } from 'antd';
+import { Typography, Table, Button, Space, Tag, message, Popconfirm, Tooltip, Drawer, Descriptions, Card, Grid, Empty, Spin } from 'antd';
 import { PlusOutlined, DeleteOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { clustersApi } from '../api/clusters';
 import type { Cluster } from '../types';
 import CreateClusterModal from '../components/clusters/CreateClusterModal';
 
+const { useBreakpoint } = Grid;
+
 const ClustersPage: React.FC = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [detailCluster, setDetailCluster] = useState<Cluster | null>(null);
   const queryClient = useQueryClient();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const { data: clusters = [], isLoading } = useQuery({
     queryKey: ['clusters'],
@@ -34,6 +38,38 @@ const ClustersPage: React.FC = () => {
     worker: 'green',
   };
 
+  const downloadKubeconfig = async (cluster: Cluster) => {
+    try {
+      const kc = await clustersApi.getKubeconfig(cluster.id);
+      const blob = new Blob([kc], { type: 'text/yaml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${cluster.name}-kubeconfig.yaml`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { message.error('Kubeconfig not available'); }
+  };
+
+  const clusterActions = (record: Cluster) => (
+    <Space>
+      <Tooltip title="View Details">
+        <Button size="small" icon={<EyeOutlined />} onClick={() => setDetailCluster(record)} />
+      </Tooltip>
+      <Tooltip title="Download Kubeconfig">
+        <Button
+          size="small"
+          icon={<DownloadOutlined />}
+          disabled={record.status !== 'running'}
+          onClick={() => downloadKubeconfig(record)}
+        />
+      </Tooltip>
+      <Popconfirm title="Delete this cluster and all its VMs?" onConfirm={() => deleteMutation.mutate(record.id)}>
+        <Button size="small" danger icon={<DeleteOutlined />} />
+      </Popconfirm>
+    </Space>
+  );
+
   const columns = [
     { title: 'Name', dataIndex: 'name', key: 'name', render: (n: string) => <Typography.Text strong>{n}</Typography.Text> },
     { title: 'Status', dataIndex: 'status', key: 'status', render: (s: string) => <Tag color={statusColor[s] || 'default'}>{s}</Tag> },
@@ -41,39 +77,7 @@ const ClustersPage: React.FC = () => {
     { title: 'Control Plane', dataIndex: 'control_plane_count', key: 'cp', render: (n: number) => `${n} nodes` },
     { title: 'Workers', dataIndex: 'worker_count', key: 'workers', render: (n: number) => `${n} nodes` },
     { title: 'Created', dataIndex: 'created_at', key: 'created_at', render: (d: string) => new Date(d).toLocaleDateString() },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_: any, record: Cluster) => (
-        <Space>
-          <Tooltip title="View Details">
-            <Button size="small" icon={<EyeOutlined />} onClick={() => setDetailCluster(record)} />
-          </Tooltip>
-          <Tooltip title="Download Kubeconfig">
-            <Button
-              size="small"
-              icon={<DownloadOutlined />}
-              disabled={record.status !== 'running'}
-              onClick={async () => {
-                try {
-                  const kc = await clustersApi.getKubeconfig(record.id);
-                  const blob = new Blob([kc], { type: 'text/yaml' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${record.name}-kubeconfig.yaml`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                } catch { message.error('Kubeconfig not available'); }
-              }}
-            />
-          </Tooltip>
-          <Popconfirm title="Delete this cluster and all its VMs?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    { title: 'Actions', key: 'actions', render: (_: any, record: Cluster) => clusterActions(record) },
   ];
 
   const nodeColumns = [
@@ -85,13 +89,42 @@ const ClustersPage: React.FC = () => {
     { title: 'Rack', dataIndex: 'rack_name', key: 'rack_name', render: (n: string) => n ? <Tag>{n.toUpperCase()}</Tag> : '-' },
   ];
 
+  const renderCards = () => {
+    if (isLoading) return <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>;
+    if (clusters.length === 0) return <Empty description="No clusters" />;
+    return (
+      <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        {clusters.map((cluster) => (
+          <Card
+            key={cluster.id}
+            size="small"
+            title={<Typography.Text strong>{cluster.name}</Typography.Text>}
+            extra={<Tag color={statusColor[cluster.status] || 'default'}>{cluster.status}</Tag>}
+            actions={[clusterActions(cluster)]}
+          >
+            <Descriptions size="small" column={1} colon={false}>
+              <Descriptions.Item label="Version">{cluster.k3s_version}</Descriptions.Item>
+              <Descriptions.Item label="Control Plane">{cluster.control_plane_count} nodes</Descriptions.Item>
+              <Descriptions.Item label="Workers">{cluster.worker_count} nodes</Descriptions.Item>
+              <Descriptions.Item label="Created">{new Date(cluster.created_at).toLocaleDateString()}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        ))}
+      </Space>
+    );
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Typography.Title level={2} style={{ margin: 0 }}>Clusters</Typography.Title>
+        <Typography.Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>Clusters</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>Create Cluster</Button>
       </div>
-      <Table columns={columns} dataSource={clusters} rowKey="id" loading={isLoading} pagination={false} />
+
+      {isMobile ? renderCards() : (
+        <Table columns={columns} dataSource={clusters} rowKey="id" loading={isLoading} pagination={false} scroll={{ x: 'max-content' }} />
+      )}
+
       <CreateClusterModal open={createOpen} onClose={() => setCreateOpen(false)} />
 
       <Drawer
@@ -109,7 +142,7 @@ const ClustersPage: React.FC = () => {
               <Descriptions.Item label="Workers">{detailCluster.worker_count} nodes</Descriptions.Item>
             </Descriptions>
             <Typography.Title level={4} style={{ marginTop: 24 }}>Nodes</Typography.Title>
-            <Table columns={nodeColumns} dataSource={detailCluster.nodes} rowKey="id" pagination={false} size="small" />
+            <Table columns={nodeColumns} dataSource={detailCluster.nodes} rowKey="id" pagination={false} size="small" scroll={{ x: 'max-content' }} />
           </>
         )}
       </Drawer>

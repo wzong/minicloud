@@ -24,3 +24,11 @@ class IPAvailableResponse(BaseModel):
     available_ips: list[str]
     total_available: int
     total_range: int
+
+
+class IPConfigResponse(BaseModel):
+    range_start: str
+    range_end: str
+    subnet_mask: str
+    gateway: str
+    dns: list[str]
