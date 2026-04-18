@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Typography, theme, Button, Drawer, Grid } from 'antd';
+import { Layout, Menu, Typography, theme, Button, Drawer, Grid, ConfigProvider, Tooltip } from 'antd';
 import {
   DashboardOutlined,
   CloudServerOutlined,
@@ -10,6 +10,8 @@ import {
   GlobalOutlined,
   ApiOutlined,
   MenuOutlined,
+  BulbOutlined,
+  BulbFilled,
 } from '@ant-design/icons';
 import Dashboard from './pages/Dashboard';
 import HostsPage from './pages/HostsPage';
@@ -22,6 +24,8 @@ import WireGuardPage from './pages/WireGuardPage';
 const { Sider, Content, Header } = Layout;
 const { useBreakpoint } = Grid;
 
+const THEME_KEY = 'mc.theme';
+
 const menuItems = [
   { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/hosts', icon: <CloudServerOutlined />, label: 'Hosts' },
@@ -32,7 +36,19 @@ const menuItems = [
   { key: '/wireguard', icon: <ApiOutlined />, label: 'WireGuard' },
 ];
 
-const App: React.FC = () => {
+const getInitialDark = (): boolean => {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'dark') return true;
+  if (stored === 'light') return false;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+};
+
+interface AppLayoutProps {
+  isDark: boolean;
+  onToggleTheme: () => void;
+}
+
+const AppLayout: React.FC<AppLayoutProps> = ({ isDark, onToggleTheme }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = theme.useToken();
@@ -45,6 +61,10 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isMobile) setMobileDrawerOpen(false);
   }, [location.pathname, isMobile]);
+
+  useEffect(() => {
+    document.body.style.background = token.colorBgLayout;
+  }, [token.colorBgLayout]);
 
   const brand = (
     <div
@@ -109,6 +129,15 @@ const App: React.FC = () => {
               Minicloud
             </Typography.Title>
           )}
+          <Tooltip title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}>
+            <Button
+              type="text"
+              style={{ marginLeft: 'auto' }}
+              icon={isDark ? <BulbFilled /> : <BulbOutlined />}
+              aria-label="Toggle dark theme"
+              onClick={onToggleTheme}
+            />
+          </Tooltip>
         </Header>
         <Drawer
           placement="left"
@@ -140,6 +169,28 @@ const App: React.FC = () => {
         </Content>
       </Layout>
     </Layout>
+  );
+};
+
+const App: React.FC = () => {
+  const [isDark, setIsDark] = useState<boolean>(getInitialDark);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => {
+      const next = !prev;
+      localStorage.setItem(THEME_KEY, next ? 'dark' : 'light');
+      return next;
+    });
+  };
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+      }}
+    >
+      <AppLayout isDark={isDark} onToggleTheme={toggleTheme} />
+    </ConfigProvider>
   );
 };
 
