@@ -76,7 +76,7 @@ class HostService:
         await self.db.refresh(host)
         return host
 
-    def _get_ssh_client(self, host: Host) -> SSHClient:
+    def get_ssh_client(self, host: Host) -> SSHClient:
         return SSHClient(
             host=host.ip_address,
             port=host.ssh_port,
@@ -84,6 +84,8 @@ class HostService:
             key_path=host.ssh_key_path,
             password=host.ssh_password,
         )
+
+    _get_ssh_client = get_ssh_client
 
     async def detect_hardware(self, host_id: int) -> Host:
         host = await self.db.get(Host, host_id)
