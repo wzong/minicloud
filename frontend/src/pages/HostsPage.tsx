@@ -14,12 +14,13 @@ import {
   Spin,
   Grid,
 } from 'antd';
-import { PlusOutlined, ReloadOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, DeleteOutlined, SearchOutlined, CodeOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hostsApi } from '../api/hosts';
 import type { Host } from '../types';
 import AddHostModal from '../components/hosts/AddHostModal';
 import HostDetailDrawer from '../components/hosts/HostDetailDrawer';
+import TerminalDrawer from '../components/terminal/TerminalDrawer';
 
 const { useBreakpoint } = Grid;
 
@@ -37,6 +38,7 @@ const formatCpu = (v: number | null) => (v ? `${v} cores` : '-');
 const HostsPage: React.FC = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [detailHost, setDetailHost] = useState<Host | null>(null);
+  const [terminalHost, setTerminalHost] = useState<Host | null>(null);
   const queryClient = useQueryClient();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -75,6 +77,14 @@ const HostsPage: React.FC = () => {
           icon={<ReloadOutlined />}
           loading={detectMutation.isPending}
           onClick={() => detectMutation.mutate(record.id)}
+        />
+      </Tooltip>
+      <Tooltip title={record.status === 'online' ? 'Open terminal' : 'Host must be online'}>
+        <Button
+          size="small"
+          icon={<CodeOutlined />}
+          disabled={record.status !== 'online'}
+          onClick={() => setTerminalHost(record)}
         />
       </Tooltip>
       <Popconfirm title="Delete this host?" onConfirm={() => deleteMutation.mutate(record.id)}>
@@ -232,6 +242,12 @@ const HostsPage: React.FC = () => {
       )}
       <AddHostModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
       <HostDetailDrawer host={detailHost} onClose={() => setDetailHost(null)} />
+      <TerminalDrawer
+        open={!!terminalHost}
+        onClose={() => setTerminalHost(null)}
+        wsPath={terminalHost ? `/api/hosts/${terminalHost.id}/terminal` : null}
+        title={terminalHost ? `Terminal — ${terminalHost.ssh_user}@${terminalHost.ip_address}` : 'Terminal'}
+      />
     </div>
   );
 };

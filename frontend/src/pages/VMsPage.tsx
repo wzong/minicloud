@@ -20,11 +20,13 @@ import {
   CaretRightOutlined,
   PoweroffOutlined,
   DeleteOutlined,
+  CodeOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vmsApi } from '../api/vms';
 import type { VM } from '../types';
 import CreateVMModal from '../components/vms/CreateVMModal';
+import TerminalDrawer from '../components/terminal/TerminalDrawer';
 
 const { useBreakpoint } = Grid;
 
@@ -39,6 +41,7 @@ const statusColor: Record<string, string> = {
 const VMsPage: React.FC = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [groupByRack, setGroupByRack] = useState(false);
+  const [terminalVm, setTerminalVm] = useState<VM | null>(null);
   const queryClient = useQueryClient();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -101,6 +104,14 @@ const VMsPage: React.FC = () => {
           />
         </Tooltip>
       )}
+      <Tooltip title={record.status === 'running' ? 'Open terminal' : 'VM must be running'}>
+        <Button
+          size="small"
+          icon={<CodeOutlined />}
+          disabled={record.status !== 'running'}
+          onClick={() => setTerminalVm(record)}
+        />
+      </Tooltip>
       <Popconfirm title="Delete this VM?" onConfirm={() => deleteMutation.mutate(record.id)}>
         <Button size="small" danger icon={<DeleteOutlined />} />
       </Popconfirm>
@@ -239,6 +250,12 @@ const VMsPage: React.FC = () => {
       )}
 
       <CreateVMModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <TerminalDrawer
+        open={!!terminalVm}
+        onClose={() => setTerminalVm(null)}
+        wsPath={terminalVm ? `/api/vms/${terminalVm.id}/terminal` : null}
+        title={terminalVm ? `Terminal — ubuntu@${terminalVm.ip_address} (${terminalVm.name})` : 'Terminal'}
+      />
     </div>
   );
 };

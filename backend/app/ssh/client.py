@@ -73,6 +73,19 @@ class SSHClient:
             await self.connect()
         await asyncssh.scp((self._conn, remote_path), local_path)
 
+    async def start_shell(
+        self,
+        term_type: str = "xterm-256color",
+        term_size: tuple[int, int] = (80, 24),
+    ):
+        if not self._conn:
+            await self.connect()
+        return await self._conn.create_process(
+            term_type=term_type,
+            term_size=term_size,
+            encoding=None,
+        )
+
     async def __aenter__(self):
         await self.connect()
         return self
