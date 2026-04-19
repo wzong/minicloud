@@ -51,11 +51,21 @@ async def vm_terminal(
         await websocket.close(code=4412)
         return
 
+    host = await db.get(Host, vm.host_id)
+    if not host:
+        await websocket.close(code=4404)
+        return
+
+    from app.services.host_service import HostService
+
+    host_ssh = HostService(db).get_ssh_client(host)
+
     ssh_client = SSHClient(
         host=vm.ip_address,
         port=22,
         username="ubuntu",
         key_path=ssh_key.private_key_path,
+        jump_via=host_ssh,
     )
     await proxy_terminal(websocket, ssh_client)
 

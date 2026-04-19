@@ -10,12 +10,14 @@ class SSHClient:
         username: str = "root",
         key_path: Optional[str] = None,
         password: Optional[str] = None,
+        jump_via: Optional["SSHClient"] = None,
     ):
         self.host = host
         self.port = port
         self.username = username
         self.key_path = key_path
         self.password = password
+        self.jump_via = jump_via
         self._conn: Optional[asyncssh.SSHClientConnection] = None
 
     async def connect(self) -> None:
@@ -29,12 +31,18 @@ class SSHClient:
             kwargs["client_keys"] = [self.key_path]
         if self.password:
             kwargs["password"] = self.password
+        if self.jump_via is not None:
+            if self.jump_via._conn is None:
+                await self.jump_via.connect()
+            kwargs["tunnel"] = self.jump_via._conn
         self._conn = await asyncssh.connect(**kwargs)
 
     async def disconnect(self) -> None:
         if self._conn:
             self._conn.close()
             self._conn = None
+        if self.jump_via is not None:
+            await self.jump_via.disconnect()
 
     async def run(self, command: str) -> str:
         if not self._conn:
