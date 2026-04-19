@@ -26,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vmsApi } from '../api/vms';
 import type { VM } from '../types';
 import CreateVMModal from '../components/vms/CreateVMModal';
+import ReadinessPopover from '../components/vms/ReadinessPopover';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 
 const { useBreakpoint } = Grid;
@@ -137,7 +138,13 @@ const VMsPage: React.FC = () => {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (s: string) => <Tag color={statusColor[s] || 'default'}>{s}</Tag>,
+      render: (s: string, record: VM) => (
+        <ReadinessPopover vmId={record.id}>
+          <Tag color={statusColor[s] || 'default'} style={{ cursor: 'pointer' }}>
+            {s}
+          </Tag>
+        </ReadinessPopover>
+      ),
     },
     { title: 'CPU', dataIndex: 'cpu_cores', key: 'cpu_cores', render: (v: number) => `${v} cores` },
     {
@@ -164,7 +171,13 @@ const VMsPage: React.FC = () => {
           {vm.rack_name && <Tag>{vm.rack_name.toUpperCase()}</Tag>}
         </Space>
       }
-      extra={<Tag color={statusColor[vm.status] || 'default'}>{vm.status}</Tag>}
+      extra={
+        <ReadinessPopover vmId={vm.id}>
+          <Tag color={statusColor[vm.status] || 'default'} style={{ cursor: 'pointer' }}>
+            {vm.status}
+          </Tag>
+        </ReadinessPopover>
+      }
       actions={[vmActions(vm)]}
     >
       <Descriptions size="small" column={1} colon={false}>

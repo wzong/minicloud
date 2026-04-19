@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { VM, VMCreate, VMsByRack } from '../types';
+import type { VM, VMCreate, VMsByRack, VMReadiness } from '../types';
 
 export const vmsApi = {
   list: (params?: Record<string, any>) => apiClient.get<VM[]>('/vms', { params }).then(r => r.data),
@@ -9,5 +9,6 @@ export const vmsApi = {
   start: (id: number) => apiClient.post<VM>(`/vms/${id}/start`).then(r => r.data),
   stop: (id: number) => apiClient.post<VM>(`/vms/${id}/stop`).then(r => r.data),
   refresh: (id: number) => apiClient.post<VM>(`/vms/${id}/refresh`).then(r => r.data),
+  readiness: (id: number) => apiClient.get<VMReadiness>(`/vms/${id}/readiness`).then(r => r.data),
   byRack: () => apiClient.get<VMsByRack[]>('/vms/by-rack').then(r => r.data),
 };

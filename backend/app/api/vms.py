@@ -4,7 +4,7 @@ from typing import Optional
 
 from app.api import router
 from app.database import get_db
-from app.schemas.vm import VMCreate, VMResponse, VMsByRack
+from app.schemas.vm import VMCreate, VMResponse, VMsByRack, VMReadiness
 
 vms_router = APIRouter(prefix="/vms", tags=["vms"])
 
@@ -72,6 +72,13 @@ async def refresh_vm(vm_id: int, db: AsyncSession = Depends(get_db)):
     from app.services.vm_service import VMService
     service = VMService(db)
     return await service.refresh_vm_status(vm_id)
+
+
+@vms_router.get("/{vm_id}/readiness", response_model=VMReadiness)
+async def vm_readiness(vm_id: int, db: AsyncSession = Depends(get_db)):
+    from app.services.vm_service import VMService
+    service = VMService(db)
+    return await service.check_readiness(vm_id)
 
 
 router.include_router(vms_router)

@@ -42,3 +42,11 @@ class VMsByRack(BaseModel):
     rack_name: str
     host_ip: str
     vms: list[VMResponse]
+
+
+class VMReadiness(BaseModel):
+    hypervisor_running: bool
+    ip_reachable: bool
+    ssh_port_open: bool
+    ssh_auth_ok: bool
+    cloud_init_status: Optional[str] = None

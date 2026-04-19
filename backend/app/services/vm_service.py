@@ -1,3 +1,5 @@
+import asyncio
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -7,7 +9,8 @@ from typing import Optional
 from app.models.host import Host
 from app.models.vm import VM, VMStatus
 from app.models.cluster import ClusterNode
-from app.schemas.vm import VMCreate
+from app.models.ssh_key import SSHKey
+from app.schemas.vm import VMCreate, VMReadiness
 from app.services.ip_manager import IPManager
 from app.config import settings
 
@@ -291,6 +294,109 @@ class VMService:
 
         await self.db.commit()
         return await self.get_vm(vm_id)
+
+    async def check_readiness(self, vm_id: int) -> VMReadiness:
+        import asyncssh
+
+        vm = await self.db.get(VM, vm_id)
+        if not vm:
+            raise HTTPException(status_code=404, detail="VM not found")
+        host = await self.db.get(Host, vm.host_id)
+
+        hypervisor_running = False
+        ip_reachable = False
+        if host:
+            try:
+                from app.drivers import get_driver
+                from app.ssh.client import SSHClient
+
+                ssh = SSHClient(
+                    host=host.ip_address,
+                    port=host.ssh_port,
+                    username=host.ssh_user,
+                    key_path=host.ssh_key_path,
+                    password=host.ssh_password,
+                )
+                driver = get_driver(host.os_type, ssh)
+                async with ssh:
+                    try:
+                        info = await driver.get_vm_info(vm.name)
+                        hypervisor_running = info.state == "running"
+                    except Exception:
+                        pass
+                    try:
+                        ok, _ = await ssh.run_safe(
+                            f"ping -c 1 -W 2 {vm.ip_address}"
+                        )
+                        ip_reachable = ok
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        ssh_port_open = await self._check_tcp(vm.ip_address, 22, timeout=3)
+
+        ssh_auth_ok = False
+        cloud_init_status: Optional[str] = None
+        ssh_key = None
+        if vm.ssh_key_id:
+            ssh_key = await self.db.get(SSHKey, vm.ssh_key_id)
+
+        if ssh_port_open and ssh_key:
+            try:
+                conn = await asyncio.wait_for(
+                    asyncssh.connect(
+                        vm.ip_address,
+                        username="ubuntu",
+                        client_keys=[ssh_key.private_key_path],
+                        known_hosts=None,
+                    ),
+                    timeout=5,
+                )
+                ssh_auth_ok = True
+                try:
+                    result = await asyncio.wait_for(
+                        conn.run("cloud-init status", check=False),
+                        timeout=10,
+                    )
+                    out = (result.stdout or "").strip()
+                    for line in out.splitlines():
+                        if "status:" in line:
+                            cloud_init_status = line.split("status:", 1)[1].strip().split()[0]
+                            break
+                except Exception:
+                    pass
+                finally:
+                    conn.close()
+                    try:
+                        await conn.wait_closed()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        return VMReadiness(
+            hypervisor_running=hypervisor_running,
+            ip_reachable=ip_reachable,
+            ssh_port_open=ssh_port_open,
+            ssh_auth_ok=ssh_auth_ok,
+            cloud_init_status=cloud_init_status,
+        )
+
+    @staticmethod
+    async def _check_tcp(host: str, port: int, timeout: float) -> bool:
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=timeout
+            )
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
+            return True
+        except Exception:
+            return False
 
     async def get_vms_by_rack(self) -> list[dict]:
         result = await self.db.execute(
