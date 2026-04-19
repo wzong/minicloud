@@ -304,7 +304,6 @@ class VMService:
         host = await self.db.get(Host, vm.host_id)
 
         hypervisor_running = False
-        ip_reachable = False
         if host:
             try:
                 from app.drivers import get_driver
@@ -324,16 +323,10 @@ class VMService:
                         hypervisor_running = info.state == "running"
                     except Exception:
                         pass
-                    try:
-                        ok, _ = await ssh.run_safe(
-                            f"ping -c 1 -W 2 {vm.ip_address}"
-                        )
-                        ip_reachable = ok
-                    except Exception:
-                        pass
             except Exception:
                 pass
 
+        ip_reachable = await self._check_ping(vm.ip_address)
         ssh_port_open = await self._check_tcp(vm.ip_address, 22, timeout=3)
 
         ssh_auth_ok = False
@@ -382,6 +375,29 @@ class VMService:
             ssh_auth_ok=ssh_auth_ok,
             cloud_init_status=cloud_init_status,
         )
+
+    @staticmethod
+    async def _check_ping(ip: str, timeout: float = 4.0) -> bool:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "ping", "-c", "1", "-W", "2", ip,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            return False
+        except Exception:
+            return False
+        try:
+            rc = await asyncio.wait_for(proc.wait(), timeout=timeout)
+            return rc == 0
+        except asyncio.TimeoutError:
+            try:
+                proc.kill()
+                await proc.wait()
+            except Exception:
+                pass
+            return False
 
     @staticmethod
     async def _check_tcp(host: str, port: int, timeout: float) -> bool:
