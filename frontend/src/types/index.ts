@@ -76,6 +76,14 @@ export interface VMsByRack {
   vms: VM[];
 }
 
+export interface VMReadiness {
+  hypervisor_running: boolean;
+  ip_reachable: boolean;
+  ssh_port_open: boolean;
+  ssh_auth_ok: boolean;
+  cloud_init_status: string | null;
+}
+
 export interface SSHKey {
   id: number;
   name: string;

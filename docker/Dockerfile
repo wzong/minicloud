@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \
     iproute2 \
     iptables \
+    iputils-ping \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
