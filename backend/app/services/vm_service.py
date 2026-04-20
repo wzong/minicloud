@@ -380,7 +380,7 @@ class VMService:
     async def _check_ping(ip: str, timeout: float = 4.0) -> bool:
         try:
             proc = await asyncio.create_subprocess_exec(
-                "ping", "-c", "1", "-W", "2", ip,
+                "ping", "-c", "1", ip,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )

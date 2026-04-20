@@ -182,6 +182,18 @@ Remove-VM -Name <name> -Force
 - Cloud-init ISO creation may use WSL or Windows tools
 - Virtual switch must be pre-configured in "External" mode
 
+## Network Interface Name (cloud-init caveat)
+
+The cloud-init `network-config` template (`backend/app/templates/network-config.j2`) uses `match: {}` (netplan v2 wildcard) rather than a hardcoded interface name. This is intentional — each hypervisor exposes the NIC under a different name inside the guest:
+
+| Driver | Typical guest NIC name |
+|--------|------------------------|
+| KVM | `ens3` (virtio-net) |
+| Hyper-V | `eth0` (hv_netvsc synthetic NIC) |
+| Multipass | varies |
+
+Hardcoding a specific name (e.g., `ens3`) causes cloud-init to silently skip network configuration on other hypervisors, leaving the VM with no IP. Keep `match: {}` to ensure the static IP is applied regardless of hypervisor.
+
 ## Error Handling
 
 All drivers follow these conventions:

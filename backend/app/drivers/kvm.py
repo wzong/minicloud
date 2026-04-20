@@ -36,10 +36,14 @@ class KVMDriver(HypervisorDriver):
         vm_disk = f"{image_dir}/{spec.name}.qcow2"
         ci_dir = f"/tmp/cloud-init-{spec.name}"
 
-        # Download base image if not cached
+        # Download base image if not cached or is corrupt (zero-size)
         image_url = self._get_image_url(spec.os_image)
         await self.ssh.run(
-            f"test -f {base_image} || wget -q -O {base_image} {image_url}"
+            f"if [ ! -f {base_image} ] || [ ! -s {base_image} ]; then "
+            f"rm -f {base_image} && "
+            f"wget -O {base_image} {image_url} || "
+            f"(rm -f {base_image} && echo 'ERROR: failed to download base image' >&2 && exit 1); "
+            f"fi"
         )
 
         # Create disk from base image
