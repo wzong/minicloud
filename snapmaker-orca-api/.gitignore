@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+node_modules/
+dist/
+.vite/
+*.local
+tsconfig.tsbuildinfo
+# tsc with noEmit shouldn't emit these, but ignore if a stale build leaks them
+frontend/src/**/*.js
+
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+work/
+uploads/
+.env
+.env.local
+
+.DS_Store
